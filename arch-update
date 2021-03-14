@@ -1,249 +1,26 @@
 #!/usr/bin/env bash
 #
-# arch-update: Atualiza o Arch Linux
+# arch-update - Atualiza o Arch Linux
 #
-# Site:       N/A
-# Autor:      Jefferson Santana
-# Manutenção: Jefferson Santana
+# Site:       https://github.com/linuxjeff/arch-update
+# Autor:      Jefferson Vitor de Santana
+# Manutenção: Jefferson Vitor de Santana
 #
-# ---------------------------------------------------------------------------------- #
-#  Este programa usa o pacman para atualizar o Arch e o pacchacer para
-#  limpar a cache do pacman.
+# ------------------------------------------------------------------------ #
+#  Este programa atualiza pacotes do Pacman, Aur, flatpak e Snap.
 #
 #  Exemplos:
-#      $ arch-update
-#      Neste exemplo o programa atualiza e limpa a cache.
-# ---------------------------------------------------------------------------------- #
+#      $ ach-update
+#      Neste exemplo o script faz a atualização dos pacotes.
+# ------------------------------------------------------------------------ #
 # Histórico:
 #
-#   v0.1.0 04/09/2019, Jefferson:
+#   v0.0.1 15/12/2020, Jefferson:
 #       - Início do programa
-#
-#   v0.1.1 05/09/2019, Jefferson:
-#       - indentação do codigo
-#       - comentario do codigo
-#   v0.1.2 05/09/2019, Jefferson:
-#       - indentação do codigo
-#       - comentario do codigo
-#   v0.2.0 14/09/2019, Jefferson:
-#       - organização do código
-#       - indentação do código
-#       - teste do paccher
-#   v0.2.1 16/09/2019, Jefferson:
-#       - organização do código
-#       - indentação do código
-#       - suporte ao flatpak
-#   v0.2.2 20/09/2019, Jefferson:
-#       - organização do código
-#       - indentação do código
-#       - correções de bugs
-#   v0.2.3 22/09/2019, Jefferson:
-#       - organização do código
-#       - indentação do código
-#   v0.2.4 27/09/2019, Jefferson:
-#       - Opção -h para ajuda
-#       - Opção -V para versão
-#       - indentação do código
-#   v0.2.5 28/09/2019, Jefferson:
-#       - Bug para mostrar a
-#         versão corrigido
-#       - Opção -p para execução
-#         somente do pacman
-#       - Alteração de texto por
-#         variaveis
-#       - Criação de chaves para
-#         melhorar o programa
-#   v0.2.6 02/10/2019, Jefferson:
-#       - Organização do código
-#   v0.2.7 03/10/2019, Jefferson:
-#       - Mudança de versão de
-#         dependências
-#       - Funsão de debug
-#         acrescentada
-#       - organização do código
-#       - indentação do código
-#   v0.2.8 07/10/2019, Jefferson:
-#       - Organização do texto
-# ---------------------------------------------------------------------------------- #
-# ---------------------------------------------------------------------------------- #
+# ------------------------------------------------------------------------ #
 # Testado em:
-#   bash     v5.0.11
-#   pacman   v5.1.3
-#   paccache v1.2.0
-#   flatpak  v1.5.0
-# ---------------------------------------------------------------------------------- #
+#   bash 4.4.19
+# ------------------------------------------------------------------------ #
 # Agradecimentos:
 #
-# ---------------------------------------------------------------------------------- #
-
-# ------------------------------- VARIÁVEIS ---------------------------------------- #
-  
-  CH_PACMAN=0
-
-  CH_FLATPAK=0
-
-  CH_PACCHACE=1
-
-  CH_SEM_SAIDA=0
-  
-  MENSAGEM_AJUDA="Uso: $(basename "$0") [OPÇÕES]
-  
-   -a --ajuda     Mostra a ajuda
-   -p             Executa somente o pacman
-   -V --versao    Mostra a versão
-  "
-
-  PEGAR_VERSAO=`egrep "^#   v" $0 | tail -n1 | cut -d " " -f 4`
-
-  VERSAO="$(basename "$0") $PEGAR_VERSAO"
-  
-  PROGRAMA1='pacman -Syu --noconfirm'   # Executa a atualização total com pacman.
-
-  PROGRAMA2='paccache -r'             # Executa a limpeza da cache com paccache.
-
-  PROGRAMA3='flatpak update -y'       # Executa a atualização total com flatpak.
-
-  INS_CONTRIB='pacman -S pacman-contrib --noconfirm'
-
-  SEM_SAIDA=
-
-  DEBUG=0
-
-  COLUNAS="\033[12C"
-
-  CORVERDE="\033[32;1m"
-
-  CORROXO="\033[35;1m"
-
-  CORVERMELHA="\033[31;1m"
-  
-  CORAMARELO="\033[33;1m"
-
-  CORFUNDOROXO="\033[45;1m"
-
-  CORFUNDOVERMELHO="\033[41;1m"
-
-  CORFUNDOAMARELO="\033[43;1m"
-
-  FECHARCOR="\033[m"
-
-  LINHA_COMECO="echo -e "$COLUNAS""$CORVERDE"Iníciando Atualização"$FECHARCOR""
-
-  LINHA_FINAL="echo -e "$COLUNAS""$CORVERDE"Fim da Atualização"$FECHARCOR""
-	
-  LINHA_C_FL="echo -e "$COLUNAS""$CORROXO"Início do Flatpak"$FECHARCOR""
-
-  LINHA_F_FL="echo -e "$COLUNAS""$CORROXO"Fim do Flatpak"$FECHARCOR""
-
-  LINHA_C_PC="echo -e "$COLUNAS""$CORVERMELHA"Início do Pacman"$FECHARCOR""
-
-  LINHA_F_PC="echo -e "$COLUNAS""$CORVERMELHA"Fim do Pacman"$FECHARCOR""
-
-  LINHA_C_PH="echo -e "$COLUNAS""$CORAMARELO"Início do Paccache"$FECHARCOR""
-
-  LINHA_F_PH="echo -e "$COLUNAS""$CORAMARELO"Fim do Paccache"$FECHARCOR""
-
-# ---------------------------------------------------------------------------------- #
-
-# ------------------------------- TESTES ------------------------------------------- #
-# Função de Debug para todo o programa. 
-  Debug(){
-    [ $DEBUG = 1 ] && echo "--- DEBUG $*"
-  }
-
-# While das opções de linha de comando.
-  while test -n "$1"
-       do 
-# Case das opçãoes. 
-        case "$1" in
- 	          -a | --ajuda )
-                     echo "$MENSAGEM_AJUDA"
-	             exit 0
- 	             ;;
-
-                  -V | --versao )
-	             echo "$VERSAO"
-	             exit 0
-	             ;;
-
-                  -p )
-                     CH_PACMAN=1
-                     ;;
-
-                  -q | --quieto )
-                     CH_SEM_SAIDA=1
-                     ;;
-
-                   * )
-                      echo Opção inválida: $1
-		      exit 1
-	             ;;
-        esac
-       shift
-  done
- 
-# Verificação do pacote pacman-contrib. 
-  if [[ ! -x "$(which paccache 2> /dev/null)" ]]
-        then
-             $INS_CONTRIB
-  fi
-
-# Verificação do pacote flatpak  
-  if [[ -x "$(which flatpak 2> /dev/null)" ]]
-        then
-             CH_FLATPAK=1
-  fi
-
-  Debug 2 "Teste de chave: "$CH_PACMAN"" # Teste de debug.
-
-# teste da CH_PACMAN para opção -p.
-  if test "$CH_PACMAN" = 1
-        then
-             CH_FLATPAK=0
-	     CH_PACCHACE=0
-  fi
-
-  Debug 2 "Teste de chave: "$CH_PACMAN"" # Teste de debug.
-
-# ---------------------------------------------------------------------------------- #
-
-# ------------------------------- FUNÇÕES ------------------------------------------ #
-  
-# ---------------------------------------------------------------------------------- #
-# ------------------------------- EXECUÇÃO ----------------------------------------- #
-# TODO Colocar dentro de uma função para poder escolhaer o que fazer.
-# Execução dos programas
-  if test "$CH_SEM_SAIDA" = 1
-        then
-           $SEM_SAIDA 
-  fi	
-  
-  $LINHA_COMECO
-
-  if test "$CH_FLATPAK" = 1
-        then
-             $LINHA_C_FL
-	     echo -e "$CORFUNDOROXO"
-             $PROGRAMA3   # Execução do flatpak.
-	     echo -e "$FECHARCOR"
-	     $LINHA_F_FL
-  fi
-
-  $LINHA_C_PC
-  echo -e "$CORFUNDOVERMELHO"
-  $PROGRAMA1  #execução pacman 
-  echo -e "$FECHARCOR"
-  $LINHA_F_PC
-  
-  if test "$CH_PACCHACE" = 1
-       then
-            $LINHA_C_PH
-	    echo -e "$CORFUNDOAMARELO"
-            $PROGRAMA2  #execução pacche
-	    echo -e "$FECHARCOR"
-            $LINHA_F_PH
-  fi
-  
-  $LINHA_FINAL
-  
-# ---------------------------------------------------------------------------------- #
+# ------------------------------------------------------------------------ #
